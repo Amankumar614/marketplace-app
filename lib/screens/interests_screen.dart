@@ -50,49 +50,10 @@ class _InterestsScreenState extends State<InterestsScreen> {
     }
   }
 
-  void showDeleteConfirmation() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete All Interests?'),
-          content: const Text(
-            'This will permanently delete all your submitted interests.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                deleteAllInterests();
-              },
-              child: const Text('Delete All'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Interests'),
-        actions: [
-          if (interests.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete All Interests',
-              onPressed: showDeleteConfirmation,
-            ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('My Interests')),
       body: buildBody(),
     );
   }
@@ -106,13 +67,33 @@ class _InterestsScreenState extends State<InterestsScreen> {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(errorMessage!, textAlign: TextAlign.center),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 50),
+              const SizedBox(height: 12),
+              Text(errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: loadInterests,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (interests.isEmpty) {
-      return const Center(child: Text('No interests submitted yet.'));
+      return RefreshIndicator(
+        onRefresh: loadInterests,
+        child: ListView(
+          children: const [
+            SizedBox(height: 250),
+            Center(child: Text('No interests submitted yet.')),
+          ],
+        ),
+      );
     }
 
     return RefreshIndicator(
@@ -123,83 +104,86 @@ class _InterestsScreenState extends State<InterestsScreen> {
         itemBuilder: (context, index) {
           final interest = interests[index];
 
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    interest.listingTitle,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Text('Category: ${interest.category}'),
-
-                  const SizedBox(height: 4),
-
-                  Text('Area Code: ${interest.areaCode}'),
-
-                  const SizedBox(height: 4),
-
-                  Text('Price: ₹${interest.price.toStringAsFixed(0)}'),
-
-                  const SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      const Text(
-                        'Status: ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(interest.status),
-                    ],
-                  ),
-
-                  if (interest.createdAt != null) ...[
-                    const SizedBox(height: 8),
-                    Text('Submitted: ${formatDate(interest.createdAt!)}'),
-                  ],
-                ],
-              ),
-            ),
-          );
+          return buildInterestCard(interest);
         },
       ),
     );
   }
 
-  String formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
+  Widget buildInterestCard(Interest interest) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // PROPERTY NAME
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.home_work_outlined, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    interest.propertyName.isNotEmpty
+                        ? interest.propertyName
+                        : 'Property',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
-  Future<void> deleteAllInterests() async {
-    try {
-      await apiService.deleteAllInterests();
+            const SizedBox(height: 16),
 
-      if (!mounted) return;
+            // STATUS
+            Row(
+              children: [
+                const Text(
+                  'Status: ',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Chip(
+                  label: Text(interest.status),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
 
-      setState(() {
-        interests.clear();
-      });
+            const Divider(),
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All interests deleted successfully')),
-      );
-    } catch (e) {
-      if (!mounted) return;
+            // USER NAME
+            Text('Name: ${interest.fullName}'),
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to delete interests: $e')));
-    }
+            const SizedBox(height: 6),
+
+            // MOBILE
+            Text('Mobile: ${interest.mobile}'),
+
+            const SizedBox(height: 6),
+
+            // EMAIL
+            Text('Email: ${interest.email}'),
+
+            const SizedBox(height: 12),
+
+            // MESSAGE
+            if (interest.message.isNotEmpty) ...[
+              const Text(
+                'Message:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(interest.message),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
