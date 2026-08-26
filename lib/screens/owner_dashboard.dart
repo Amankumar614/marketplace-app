@@ -60,8 +60,7 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
   @override
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', false);
-    await prefs.remove('userRole');
+    await prefs.clear();
 
     if (!mounted) return;
 

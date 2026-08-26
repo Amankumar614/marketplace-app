@@ -31,18 +31,22 @@ class _PropertyAppState extends State<PropertyApp> {
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
     if (isLoggedIn) {
+      final userId = prefs.getString('userId') ?? '';
+      final userName = prefs.getString('userName') ?? 'User';
+      final userEmail = prefs.getString('userEmail') ?? 'user@test.com';
       final userRole = prefs.getString('userRole') ?? 'User';
-      final dummyUser = User(
-        id: '1',
-        name: 'User',
-        email: 'user@test.com',
+
+      final user = User(
+        id: userId,
+        name: userName,
+        email: userEmail,
         role: userRole,
       );
 
       if (userRole == 'User') {
-        return ListingScreen(user: dummyUser);
+        return ListingScreen(user: user);
       } else {
-        return OwnerDashboard(user: dummyUser);
+        return OwnerDashboard(user: user);
       }
     }
     return const LoginScreen();
